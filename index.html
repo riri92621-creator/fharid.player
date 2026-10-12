@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FHARID RMX</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#080b11;
+  color:white;
+  font-family:Arial,sans-serif;
+  padding:10px 0 20px;
+}
+/* TAMPILAN MUSIK IPHONE */
+.wadah{
+  position:relative;
+  width:100%;
+  height:min(177.78vw,100vh);
+  min-height:500px;
+  max-height:1000px;
+  margin:auto;
+  overflow:hidden;
+  background:#080b11;
+}
+.kerangka,.mentahan{
+  position:absolute;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  inset:0;
+}
+.kerangka{z-index:1}
+.mentahan{z-index:2;pointer-events:none}
+
+/* FOTO ALBUM KOTAK */
+.album{
+  position:absolute;
+  width:67%;
+  aspect-ratio:1/1;
+  top:13%;
+  left:50%;
+  transform:translateX(-50%);
+  overflow:hidden;
+  border-radius:12px;
+  z-index:3;
+  background:#080b11;
+}
+.album img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+/* JUDUL DAN NAMA ARTIS */
+.info-lagu{
+  position:absolute;
+  top:52.7%;
+  left:17.2%;
+  width:65.6%;
+  z-index:4;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+}
+.judul-lagu{
+  width:100%;
+  color:#fff;
+  font-size:4vw;
+  font-weight:700;
+  line-height:1.3;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.nama-artis{
+  width:100%;
+  color:#bdbdbd;
+  font-size:3.5vw;
+  font-weight:400;
+  line-height:1.4;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+/* SPECTRUM */
+.spectrum{
+  position:absolute;
+  right:0;
+  top:10%;
+  width:9%;
+  height:8vw;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1.5px;
+  overflow:hidden;
+}
+.spectrum span{
+  display:block;
+  flex:1;
+  min-width:2px;
+  height:10%;
+  background:#ffffff70;
+  border-radius:90px;
+}
+
+/* BAR PROGRES */
+.progress-lagu{
+  position:absolute;
+  top:59.5%;
+  left:17.2%;
+  width:65.6%;
+  height:1%;
+  background:#70707089;
+  overflow:hidden;
+  z-index:5;
+  border-radius:20px;
+}
+.progress-terisi{
+  width:0;
+  height:100%;
+  background:#ffffff9f;
+}
+
+/* WAKTU LAGU */
+.waktu{
+  position:absolute;
+  top:61.5%;
+  color:#888;
+  font-size:2.7vw;
+  font-weight:600;
+  z-index:5;
+  font-variant-numeric:tabular-nums;
+}
+.waktu-kiri{left:17.2%}
+.waktu-kanan{right:17.2%;text-align:right}
+/* TOMBOL PUTAR */
+.tombol-play{
+  position:absolute;
+  left:50%;
+  top:70%;
+  transform:translate(-50%,-50%);
+  width:15%;
+  height:7%;
+  z-index:10;
+  border:0;
+  background:transparent;
+}
+#audioLagu{display:none}
+/* PANEL PENGATURAN */
+.panel{
+  width:min(94%,520px);
+  margin:14px auto;
+  padding:16px;
+  background:#171a21;
+  border:1px solid #454953;
+  border-radius:18px;
+  color:white;
+}
+.panel h2{
+  font-size:18px;
+  margin-bottom:12px;
+}
+.panel label{
+  display:block;
+  color:#cfd3dc;
+  font-size:13px;
+  margin:10px 0 6px;
+}
+.panel input[type=text],
+.panel input[type=file]{
+  display:block;
+  width:100%;
+  min-height:42px;
+  border:1px solid #4b505c;
+  border-radius:10px;
+  padding:9px;
+  background:#242832;
+  color:white;
+  font-size:14px;
+}
+.row{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+}
+.panel button,.unduh{
+  flex:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:10px;
+  border:0;
+  border-radius:11px;
+  background:#ffda00;
+  color:#161616;
+  font-weight:700;
+  font-size:14px;
+  text-decoration:none;
+}
+.panel button.secondary{
+  background:#363b46;
+  color:white;
+}
+.panel button:disabled{opacity:.45}
+#status{
+  font-size:13px;
+  color:#ffe34d;
+  line-height:1.5;
+  margin-top:12px;
+}
+.note{
+  font-size:12px;
+  color:#b9bec8;
+  line-height:1.5;
+  margin-top:10px;
+}
+#download{
+  display:none;
+  margin-top:12px;
+}
+@media(min-width:700px){
+  .wadah{
+    width:min(56.25vh,100vw);
+    height:min(177.78vw,100vh);
+  }
+  .judul-lagu{font-size:22px}
+  .nama-artis{font-size:18px}
+  .waktu{font-size:14px}
+  .spectrum{height:44px}
+}
+</style>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+</head>
+<body>
+
+<!-- TAMPILAN MUSIK IPHONE -->
+<div class="wadah" id="wadah">
+<img class="kerangka" src="1000624238.jpg" alt="Kerangka Musik iPhone">
+<img class="mentahan" src="1000624244.png" alt="Mentahan tambahan">
+
+<!-- FOTO ALBUM -->
+<div class="album">
+  <img id="albumImg" src="album.jpg" alt="Album">
+</div>
+
+<!-- INFORMASI LAGU -->
+<div class="info-lagu">
+  <div class="judul-lagu" id="judul">BREAGBEAT.</div>
+  <div class="nama-artis" id="artis">Fharid Rmx</div>
+  <div class="spectrum" id="spectrum">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- PROGRES -->
+<div class="progress-lagu">
+  <div class="progress-terisi" id="isi"></div>
+</div>
+<div class="waktu waktu-kiri" id="kiri">0.00</div>
+<div class="waktu waktu-kanan" id="kanan">– 0.00</div>
+<button class="tombol-play" id="play" aria-label="Putar atau jeda"></button>
+<audio id="audioLagu" src="DJ.mp3" preload="metadata" playsinline></audio>
+</div>
+
+<!-- PENGATURAN FHARID RMX -->
+<section class="panel">
+<h2>FHARID RMX — Pengaturan</h2>
+<label for="fileAudio">Pilih lagu</label>
+<input id="fileAudio" type="file" accept="audio/*">
+<label for="fileAlbum">Pilih foto album</label>
+<input id="fileAlbum" type="file" accept="image/*">
+<label for="inputJudul">Judul lagu</label>
+<input id="inputJudul" type="text" value="BREAGBEAT.">
+<label for="inputArtis">Nama artis</label>
+<input id="inputArtis" type="text" value="Fharid Rmx">
+<div class="row">
+<button id="rekam">● Rekam video</button>
+<button id="stop" class="secondary" disabled>■ Berhenti</button>
+</div>
+<div id="status">
+Pilih lagu jika perlu, lalu tekan Rekam video.
+</div>
+<a id="download" class="unduh">
+Simpan hasil video MP4
+</a>
+<p class="note">
+Fharid Rmx
+</p>
+</section>
+
+<script>
+const audio = document.getElementById('audioLagu');
+const play = document.getElementById('play');
+const kiri = document.getElementById('kiri');
+const kanan = document.getElementById('kanan');
+const isi = document.getElementById('isi');
+const bars = [...document.querySelectorAll('#spectrum span')];
+const judul = document.getElementById('judul');
+const artis = document.getElementById('artis');
+const inputJudul = document.getElementById('inputJudul');
+const inputArtis = document.getElementById('inputArtis');
+const albumImg = document.getElementById('albumImg');
+
+let ac = null;
+let analyser = null;
+let source = null;
+let freq = null;
+let raf = null;
+let recorder = null;
+let chunks = [];
+let audioUrl = null;
+let imgUrl = null;
+let downloadUrl = null;
+let frameRaf = null;
+let sedangMerekam = false;
+let mesinFFmpeg = null;
+
+async function siapkanFFmpeg(status){
+  if(!window.FFmpeg){
+    throw Error('Pustaka FFmpeg belum termuat. Periksa koneksi internet.');
+  }
+
+  const { createFFmpeg } = window.FFmpeg;
+
+  if(!mesinFFmpeg){
+    mesinFFmpeg = createFFmpeg({
+      log: false,
+      corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+      progress: ({ ratio }) => {
+        if (Number.isFinite(ratio) && ratio >= 0) {
+          const persen = Math.min(100, Math.round(ratio * 100));
+          status.textContent = 'Mengonversi ke MP4 Normal: ' + persen + '%';
+        }
+      }
+    });
+  }
+
+  if(!mesinFFmpeg.isLoaded()){
+    status.textContent = 'Memuat mesin konversi MP4... Tunggu sebentar.';
+    await mesinFFmpeg.load();
+  }
+
+  return mesinFFmpeg;
+}
+
+function setupAudio(){
+  if(ac) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) throw Error('Browser tidak mendukung AudioContext');
+  ac = new AC();
+  analyser = ac.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.minDecibels = -90;
+  analyser.maxDecibels = -20;
+  analyser.smoothingTimeConstant = 0.1;
+  source = ac.createMediaElementSource(audio);
+  source.connect(analyser);
+  analyser.connect(ac.destination);
+  freq = new Uint8Array(analyser.frequencyBinCount);
+}
+
+function energy(lo,hi){
+  const bin = ac.sampleRate / analyser.fftSize;
+  const a = Math.max(1,Math.floor(lo/bin));
+  const b = Math.min(freq.length-1,Math.ceil(hi/bin));
+  let sum = 0, n = 0;
+  for(let i=a;i<=b;i++){ sum += freq[i]; n++; }
+  return n ? sum/n : 0;
+}
+
+function animate(){
+  if(!analyser || audio.paused || audio.ended){
+    stopBars();
+    return;
+  }
+
+  analyser.getByteFrequencyData(freq);
+  const variasi = [1.0, 0.70, 0.99, 0.9, 0.60, 1.10];
+
+  bars.forEach((bar,i)=>{
+    const awal = 40 * Math.pow(2.5,i);
+    const akhir = 40 * Math.pow(2.5,i+1);
+    const v = energy(awal,akhir);
+    const tinggi = 1 + Math.min(80, v * 0.4 * variasi[i]);
+    const sekarang = parseFloat(bar.style.height) || 1;
+    const kecepatan = tinggi > sekarang ? 0.20 : 0.85;
+    const halus = sekarang + (tinggi - sekarang) * kecepatan;
+    bar.style.height = halus < 1 ? '0%' : halus + '%';
+  });
+
+  raf = requestAnimationFrame(animate);
+}
+
+function startBars(){
+  setupAudio();
+  if(ac.state !== 'running') ac.resume();
+  if(raf) cancelAnimationFrame(raf);
+  animate();
+}
+
+function stopBars(){
+  if(raf) cancelAnimationFrame(raf);
+  raf = null;
+  bars.forEach(bar => bar.style.height = '1%');
+}
+
+function fmt(s){
+  s = Math.max(0, Math.floor(Number.isFinite(s) ? s : 0));
+  return Math.floor(s/60) + '.' + String(s%60).padStart(2,'0');
+}
+
+function update(){
+  const d = audio.duration;
+  const t = audio.currentTime || 0;
+
+  if(Number.isFinite(d) && d > 0){
+    kiri.textContent = fmt(t);
+    kanan.textContent = '– ' + fmt(d-t);
+    isi.style.width = Math.min(100, t/d*100) + '%';
+  } else {
+    kiri.textContent = fmt(t);
+    kanan.textContent = '– 0.00';
+    isi.style.width = '0%';
+  }
+}
+
+audio.addEventListener('timeupdate', update);
+audio.addEventListener('loadedmetadata', update);
+audio.addEventListener('durationchange', update);
+
+audio.addEventListener('pause', () => {
+  if(!sedangMerekam) stopBars();
+});
+
+audio.addEventListener('ended', () => {
+  update();
+  stopBars();
+  if(recorder && recorder.state === 'recording'){
+    recorder.stop();
+  }
+});
+
+play.addEventListener('click', async () => {
+  try {
+    if(audio.paused){
+      setupAudio();
+      await ac.resume();
+      await audio.play();
+      startBars();
+    } else {
+      audio.pause();
+    }
+  } catch(e) {
+    alert('Musik gagal diputar. Periksa file audio.');
+  }
+});
+
+inputJudul.addEventListener('input', () => { judul.textContent = inputJudul.value || ' '; });
+inputArtis.addEventListener('input', () => { artis.textContent = inputArtis.value || ' '; });
+
+document.getElementById('fileAudio').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  if(audioUrl) URL.revokeObjectURL(audioUrl);
+  audioUrl = URL.createObjectURL(f);
+  audio.src = audioUrl;
+  audio.load();
+  update();
+});
+
+document.getElementById('fileAlbum').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  if(imgUrl) URL.revokeObjectURL(imgUrl);
+  imgUrl = URL.createObjectURL(f);
+  albumImg.src = imgUrl;
+});
+
+function tungguGambar(img){
+  return new Promise((resolve, reject) => {
+    if(img.complete && img.naturalWidth){ resolve(); return; }
+    img.onload = () => resolve();
+    img.onerror = () => reject(Error('Gambar gagal dimuat: ' + img.src));
+  });
+}
+
+document.getElementById('rekam').addEventListener('click', async () => {
+  const status = document.getElementById('status');
+  const btn = document.getElementById('rekam');
+  const stop = document.getElementById('stop');
+  const link = document.getElementById('download');
+
+  let stream = null;
+  let dest = null;
+  let sumberTerhubung = false;
+
+  try {
+    if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream){
+      throw Error('Browser tidak mendukung rekaman.');
+    }
+
+    if(!audio.src){
+      throw Error('Pilih file lagu terlebih dahulu.');
+    }
+
+    btn.disabled = true;
+    stop.disabled = true;
+    link.style.display = 'none';
+    status.textContent = 'Menyiapkan canvas & audio...';
+
+    const kerangkaImg = document.querySelector('.kerangka');
+    const mentahanImg = document.querySelector('.mentahan');
+    const wadah = document.getElementById('wadah');
+    const albumBox = document.querySelector('.album');
+    const progressLagu = document.querySelector('.progress-lagu');
+
+    await Promise.all([
+      tungguGambar(kerangkaImg),
+      tungguGambar(mentahanImg),
+      tungguGambar(albumImg)
+    ]);
+
+    setupAudio();
+    await ac.resume();
+
+    // Resolusi dioptimalkan agar tidak membuat HP nge-lag
+    const canvas = document.createElement('canvas');
+    canvas.width = 480;
+    canvas.height = 854;
+
+    const ctx = canvas.getContext('2d');
+    if(!ctx) throw Error('Canvas gagal dibuat.');
+
+    stream = canvas.captureStream(25);
+
+    dest = ac.createMediaStreamDestination();
+    source.connect(dest);
+    sumberTerhubung = true;
+
+    dest.stream.getAudioTracks().forEach(track => {
+      stream.addTrack(track);
+    });
+
+    function posisi(el){
+      const r = el.getBoundingClientRect();
+      const w = wadah.getBoundingClientRect();
+      const sx = canvas.width / w.width;
+      const sy = canvas.height / w.height;
+      return { x:(r.left-w.left)*sx, y:(r.top-w.top)*sy, w:r.width*sx, h:r.height*sy, sx, sy };
+    }
+
+    function gambarContain(img){
+      if(!img.complete || !img.naturalWidth) return;
+      const p = posisi(img);
+      const ratio = Math.min(p.w/img.naturalWidth, p.h/img.naturalHeight);
+      const w = img.naturalWidth*ratio;
+      const h = img.naturalHeight*ratio;
+      ctx.drawImage(img, p.x+(p.w-w)/2, p.y+(p.h-h)/2, w, h);
+    }
+
+    function kotakBulat(x,y,w,h,r){
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, Math.max(0, Math.min(r, w/2, h/2)));
+    }
+
+    function gambarTeks(el, teks, rata='left'){
+      const p = posisi(el);
+      const css = getComputedStyle(el);
+      const fontSize = parseFloat(css.fontSize) * p.sy;
+      const lineHeight = parseFloat(css.lineHeight) * p.sy;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(p.x, p.y, p.w, p.h);
+      ctx.clip();
+
+      ctx.fillStyle = css.color;
+      ctx.font = `${css.fontWeight} ${fontSize}px ${css.fontFamily}`;
+      ctx.textAlign = rata;
+      ctx.textBaseline = 'alphabetic';
+
+      let tulisan = teks || ' ';
+      while(tulisan.length > 1 && ctx.measureText(tulisan).width > p.w){
+        tulisan = tulisan.slice(0, -1);
+      }
+      if(tulisan !== teks && tulisan.length > 0){
+        tulisan = tulisan.slice(0, -1) + '…';
+      }
+
+      let x = p.x;
+      if(rata === 'right') x = p.x + p.w;
+      if(rata === 'center') x = p.x + p.w/2;
+
+      const baseline = p.y + (lineHeight - fontSize)/2 + fontSize * 0.82;
+      ctx.fillText(tulisan, x, baseline);
+      ctx.restore();
+    }
+
+    function gambarWaktu(el, teks, rata='left'){
+      const p = posisi(el);
+      const css = getComputedStyle(el);
+      const ukuranFont = Math.max(10, parseFloat(css.fontSize) * p.sy);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(Math.max(0, p.x-2), Math.max(0, p.y-2), p.w+4, p.h+4);
+      ctx.clip();
+
+      ctx.fillStyle = '#888888';
+      ctx.font = `600 ${ukuranFont}px Arial`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = rata;
+
+      const x = rata === 'right' ? p.x + p.w : p.x;
+      const y = p.y + p.h/2;
+      ctx.fillText(teks || '0.00', x, y);
+      ctx.restore();
+    }
+
+    function frame(){
+      update();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      gambarContain(kerangkaImg);
+      gambarContain(mentahanImg);
+
+      if(albumImg.complete && albumImg.naturalWidth){
+        const p = posisi(albumBox);
+        const radius = parseFloat(getComputedStyle(albumBox).borderRadius) * p.sx;
+        const iw = albumImg.naturalWidth;
+        const ih = albumImg.naturalHeight;
+        const sisi = Math.min(iw, ih);
+        const sx = (iw - sisi)/2;
+        const sy = (ih - sisi)/2;
+
+        ctx.save();
+        kotakBulat(p.x, p.y, p.w, p.h, radius);
+        ctx.clip();
+        ctx.drawImage(albumImg, sx, sy, sisi, sisi, p.x, p.y, p.w, p.h);
+        ctx.restore();
+      }
+
+      gambarTeks(judul, judul.textContent);
+      gambarTeks(artis, artis.textContent);
+
+      bars.forEach(bar => {
+        const p = posisi(bar);
+        const css = getComputedStyle(bar);
+        const radius = parseFloat(css.borderRadius) * p.sx;
+        ctx.fillStyle = css.backgroundColor;
+        kotakBulat(p.x, p.y, p.w, p.h, radius);
+        ctx.fill();
+      });
+
+      const pp = posisi(progressLagu);
+      const cssP = getComputedStyle(progressLagu);
+      const radiusP = parseFloat(cssP.borderRadius) * pp.sx;
+
+      ctx.save();
+      kotakBulat(pp.x, pp.y, pp.w, pp.h, radiusP);
+      ctx.clip();
+      ctx.fillStyle = cssP.backgroundColor;
+      ctx.fillRect(pp.x, pp.y, pp.w, pp.h);
+
+      const pf = posisi(isi);
+      ctx.fillStyle = getComputedStyle(isi).backgroundColor;
+      ctx.fillRect(pf.x, pf.y, pf.w, pf.h);
+      ctx.restore();
+
+      gambarWaktu(kiri, fmt(audio.currentTime || 0), 'left');
+      const sisa = Number.isFinite(audio.duration) ? Math.max(0, audio.duration - audio.currentTime) : 0;
+      gambarWaktu(kanan, '– ' + fmt(sisa), 'right');
+
+      if(sedangMerekam){
+        frameRaf = requestAnimationFrame(frame);
+      }
+    }
+
+    recorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm',
+      videoBitsPerSecond: 2500000
+    });
+    chunks = [];
+
+    recorder.ondataavailable = e => {
+      if(e.data && e.data.size > 0){
+        chunks.push(e.data);
+      }
+    };
+
+      recorder.onstop = async()=>{
+      if(frameRaf)cancelAnimationFrame(frameRaf);
+      frameRaf = null;
+
+      // Kita buat blob langsung dengan tipe video/mp4 agar dibaca sebagai MP4 oleh sistem HP & WhatsApp
+      const blobVideo = new Blob(chunks, { type: 'video/mp4' });
+      
+      if(downloadUrl) URL.revokeObjectURL(downloadUrl);
+      downloadUrl = URL.createObjectURL(blobVideo);
+
+      // Cek apakah HP mendukung fitur "Share" langsung ke aplikasi (WhatsApp)
+      if (navigator.canShare && navigator.canShare({ files: [new File([blobVideo], 'FHARID-RMX-video.mp4', { type: 'video/mp4' })] })) {
+        try {
+          const fileMp4 = new File([blobVideo], 'FHARID-RMX-video.mp4', { type: 'video/mp4' });
+          await navigator.share({
+            title: 'FHARID RMX',
+            text: 'Hasil rekaman video Fharid Rmx',
+            files: [fileMp4]
+          });
+          status.textContent = 'Berhasil dibagikan ke WhatsApp / Galeri!';
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            tampilkanTombolSimpan(blobVideo);
+          }
+        }
+      } else {
+        tampilkanTombolSimpan(blobVideo);
+      }
+
+      btn.disabled = false;
+      stop.disabled = true;
+
+      if(sumberTerhubung && dest){
+        try{ source.disconnect(dest); }catch(e){}
+      }
+
+      audio.pause();
+      stopBars();
+    };
+
+    function tampilkanTombolSimpan(blob) {
+      link.href = URL.createObjectURL(blob);
+      link.download = 'FHARID-RMX-video.mp4';
+      link.textContent = 'Kirim / Simpan Video MP4';
+      link.style.display = 'inline-flex';
+      status.textContent = 'Selesai! Silakan ketuk tombol di bawah untuk menyimpan atau kirim ke WhatsApp.';
+    }
+
+
+    audio.currentTime = 0;
+    sedangMerekam = true;
+
+    recorder.start(1000);
+    frame();
+    await audio.play();
+    startBars();
+
+    btn.disabled = true;
+    stop.disabled = false;
+    status.textContent = 'Sedang merekam lagu... Jangan keluar dari Chrome.';
+
+  } catch(e) {
+    status.textContent = 'Gagal: ' + e.message;
+    btn.disabled = false;
+    stop.disabled = true;
+    sedangMerekam = false;
+  }
+});
+
+document.getElementById('stop').addEventListener('click', () => {
+  if(recorder && recorder.state === 'recording'){
+    recorder.stop();
+  }
+});
+
+update();
+</script>
+</body>
+</html>
